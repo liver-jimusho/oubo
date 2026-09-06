@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ライバー応募・面談予約</title>
+<style>
+  :root {
+    --green: #2e9e5b;
+    --green-dark: #23824a;
+    --green-pale: #e8f5ee;
+    --ink: #1f2d27;
+    --sub: #6b7a72;
+    --line: #dde5e0;
+    --bg: #f4f7f5;
+    --red: #e0654f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.7; -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 110px; }
+  .hero {
+    background: var(--green); color: #fff; border-radius: 16px;
+    padding: 22px 20px; margin-bottom: 20px;
+  }
+  .hero .badge {
+    display: inline-block; background: rgba(255,255,255,.2);
+    font-size: 11px; letter-spacing: .12em; padding: 3px 10px;
+    border-radius: 999px; margin-bottom: 8px;
+  }
+  .hero h1 { font-size: 20px; line-height: 1.5; }
+  .hero p { font-size: 12.5px; opacity: .92; margin-top: 6px; }
+  .card {
+    background: #fff; border-radius: 14px; padding: 18px 16px;
+    margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .q-label { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .q-label .req {
+    display: inline-block; background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 700; border-radius: 4px;
+    padding: 1px 6px; margin-left: 6px; vertical-align: 2px;
+  }
+  input[type="text"] {
+    width: 100%; font-size: 16px; padding: 12px;
+    border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--green); }
+  .opts { display: flex; flex-direction: column; gap: 8px; }
+  .opts.two { flex-direction: row; flex-wrap: wrap; }
+  .opts.two label { flex: 1 1 calc(50% - 4px); }
+  .opts label {
+    display: block; border: 1.5px solid var(--line); border-radius: 10px;
+    padding: 11px 12px; font-size: 14.5px; background: #fff; cursor: pointer;
+    transition: all .12s;
+  }
+  .opts input { display: none; }
+  .opts input:checked + span { color: var(--green-dark); font-weight: 700; }
+  .opts label:has(input:checked) { border-color: var(--green); background: var(--green-pale); }
+  .note { font-size: 11.5px; color: var(--sub); margin-top: 8px; }
+  .privacy { font-size: 11px; color: var(--sub); text-align: center; margin-top: 14px; }
+  .btn {
+    width: 100%; background: var(--green); color: #fff;
+    font-size: 16px; font-weight: 700; border: none; border-radius: 12px;
+    padding: 16px; margin-top: 6px; cursor: pointer;
+  }
+  .btn:active { background: var(--green-dark); }
+  .btn:disabled { background: #b5c4bb; }
+  .btn.ghost {
+    background: #fff; color: var(--green-dark);
+    border: 1.5px solid var(--green);
+  }
+  .btn.danger { background: #fff; color: var(--red); border: 1.5px solid var(--red); }
+  .error {
+    display: none; background: #fdeeea; color: #b6452f;
+    font-size: 13px; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+  }
+  /* 予約画面 */
+  .day-block { margin-bottom: 6px; }
+  .day-title {
+    font-size: 13.5px; font-weight: 700; color: var(--green-dark);
+    margin: 14px 2px 8px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1.5px solid var(--line); background: #fff; border-radius: 999px;
+    font-size: 14px; padding: 8px 16px; cursor: pointer;
+  }
+  .chip.on {
+    border-color: var(--green); background: var(--green);
+    color: #fff; font-weight: 700;
+  }
+  .fixed-bar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,.96); border-top: 1px solid var(--line);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+  .fixed-bar .inner { max-width: 480px; margin: 0 auto; }
+  .fixed-bar .picked { font-size: 12.5px; color: var(--sub); margin-bottom: 6px; text-align: center; }
+  /* 完了・案内画面 */
+  .center { text-align: center; padding: 40px 16px; }
+  .center .mark {
+    width: 72px; height: 72px; border-radius: 50%; background: var(--green-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px; margin: 0 auto 16px;
+  }
+  .center h2 { font-size: 19px; margin-bottom: 10px; }
+  .center p { font-size: 13.5px; color: var(--sub); }
+  .booking-box {
+    background: var(--green-pale); border-radius: 12px;
+    padding: 16px; margin: 18px 0; font-size: 15px; font-weight: 700;
+    color: var(--green-dark);
+  }
+  .view { display: none; }
+  .view.active { display: block; }
+  .loading { text-align: center; padding: 60px 0; color: var(--sub); font-size: 13.5px; }
+  .demo-banner {
+    display: none; background: #fff6e0; color: #8a6d1a; font-size: 12px;
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="demo-banner" id="demoBanner">⚠ デモモードで表示中（LIFF未接続）</div>
+
+  <!-- 読み込み中 -->
+  <div class="view active" id="view-loading">
+    <div class="loading">読み込み中…</div>
+  </div>
+
+  <!-- ============ 画面1：応募フォーム ============ -->
+  <div class="view" id="view-form">
+    <div class="hero">
+      <span class="badge">LIVER AUDITION</span>
+      <h1>ライバー応募フォーム</h1>
+      <p>1分で完了します。回答内容に応じて、このLINEに自動でご案内が届きます。</p>
+    </div>
+
+    <div class="error" id="formError">未回答の項目があります。すべてご回答ください🙏</div>
+
+    <div class="card">
+      <div class="q-label">お名前（活動名でもOK）<span class="req">必須</span></div>
+      <input type="text" id="f-name" placeholder="例：はなこ" maxlength="30">
+    </div>
+
+    <div class="card">
+      <div class="q-label">年齢<span class="req">必須</span></div>
+      <div class="opts two">
+        <label><input type="radio" name="age" value="17歳以下"><span>17歳以下</span></label>
+        <label><input type="radio" name="age" value="18〜19歳"><span>18〜19歳</span></label>
+        <label><input type="radio" name="age" value="20〜29歳"><span>20〜29歳</span></label>
+        <label><input type="radio" name="age" value="30〜39歳"><span>30〜39歳</span></label>
+        <label><input type="radio" name="age" value="40歳以上"><span>40歳以上</span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="q-label">性別<span class="req">必須</span></div>
+      <div class="opts two">
+        <label><input type="radio" name="gender" value="女性"><span>女性</span></label>
+        <label><input type="radio" name="gender" value="男性"><span>男性</span></label>
+        <label><input type="radio" name="gender" value="その他"><span>その他</span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="q-label">配信のご経験<span class="req">必須</span></div>
+      <div class="opts">
+        <label><input type="radio" name="exp" value="未経験"><span>未経験（これから始めたい）</span></label>
+        <label><input type="radio" name="exp" value="経験あり（現在は所属なし）"><span>経験あり（現在は所属なし）</span></label>
+        <label><input type="radio" name="exp" value="現在ほかの事務所に所属中"><span>現在ほかの事務所に所属中</span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="q-label">配信スタイル<span class="req">必須</span></div>
+      <div class="opts">
+        <label><input type="radio" name="face" value="顔出しOK"><span>顔出しOK</span></label>
+        <label><input type="radio" name="face" value="顔出しNG（Vライバー希望）"><span>顔出しNG（Vライバー希望）</span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="q-label">配信してみたいアプリ<span class="req">必須</span></div>
+      <div class="opts">
+        <!-- ★対応アプリはここを書き換える -->
+        <label><input type="radio" name="app" value="Pococha"><span>Pococha</span></label>
+        <label><input type="radio" name="app" value="17LIVE"><span>17LIVE</span></label>
+        <label><input type="radio" name="app" value="ふわっち"><span>ふわっち</span></label>
+        <label><input type="radio" name="app" value="おまかせ（相談したい）"><span>おまかせ（相談したい）</span></label>
+        <label><input type="radio" name="app" value="その他のアプリ"><span>その他のアプリ</span></label>
+      </div>
+      <div class="note">※「おまかせ」を選ぶと面談時にぴったりのアプリをご提案します</div>
+    </div>
+
+    <button class="btn" id="submitBtn">この内容で応募する</button>
+    <div class="privacy">ご入力いただいた情報は、選考・面談のご連絡のみに使用します。</div>
+  </div>
+
+  <!-- ============ 画面2：面談予約（空き枠選択） ============ -->
+  <div class="view" id="view-slots">
+    <div class="hero">
+      <span class="badge">INTERVIEW</span>
+      <h1>面談のご予約</h1>
+      <p>ご希望の日時をタップしてください。面談はGoogle Meetで約30分です。</p>
+    </div>
+    <div class="error" id="slotsError"></div>
+    <div class="card" id="slotList">
+      <div class="loading">空き枠を確認しています…</div>
+    </div>
+  </div>
+  <div class="fixed-bar" id="bookBar" style="display:none">
+    <div class="inner">
+      <div class="picked" id="pickedLabel">日時を選択してください</div>
+      <button class="btn" id="bookBtn" disabled>この日時で予約する</button>
+    </div>
+  </div>
+
+  <!-- ============ 画面3：予約済み ============ -->
+  <div class="view" id="view-booked">
+    <div class="center">
+      <div class="mark">📅</div>
+      <h2>面談のご予約が完了しました</h2>
+      <div class="booking-box" id="bookedDate">—</div>
+      <p>Google Meetの入室URLは、前日と当日の朝に<br>このLINEへ自動でお送りします。</p>
+    </div>
+    <button class="btn ghost" id="changeBtn">日程を変更する</button>
+    <div style="height:10px"></div>
+    <button class="btn danger" id="cancelBtn">予約をキャンセルする</button>
+  </div>
+
+  <!-- ============ 画面4：完了（対象外・窓口案内など） ============ -->
+  <div class="view" id="view-done">
+    <div class="center">
+      <div class="mark">✅</div>
+      <h2>ご応募ありがとうございます！</h2>
+      <p id="doneText">このLINEトークに自動でご案内をお送りしました。<br>トーク画面に戻ってご確認ください✨</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+// ================================================================
+// ★設定（この2つを自分のものに書き換える）
+//   GAS_URLは末尾に ?token=合言葉 を付けること（手順書STEP3のWEBHOOK_TOKEN）
+// ================================================================
+var LIFF_ID = 'xxxxxxxxxx-xxxxxxxx';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzrx8f-gmp-ozEdJMraRn1kwTIl-nhXP-jvrojJ0PHeCS7cZe_IMYdi0w_x2jYVhGRK/exec?token=fZ1PCjPb51LXIdLV9wbK22vp4tT5VW7';
+
+var idToken = '';
+var demo = false;
+var selectedSlot = null;
+
+// ---- 画面の切り替え ----
+function show(id) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  document.getElementById('bookBar').style.display = (id === 'view-slots') ? 'block' : 'none';
+  window.scrollTo(0, 0);
+}
+
+// ---- GASのAPIを呼ぶ（userIdは送らない。IDトークンで本人確認する）----
+function api(action, extra) {
+  if (demo) return demoApi(action, extra);
+  var body = Object.assign({ action: action, idToken: idToken }, extra || {});
+  return fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  }).then(function(r) { return r.json(); });
+}
+
+// ---- LIFF初期化（失敗したらデモモードで動く）----
+(function init() {
+  if (typeof liff === 'undefined' || LIFF_ID.indexOf('xxxx') !== -1) {
+    startDemo(); return;
+  }
+  liff.init({ liffId: LIFF_ID }).then(function() {
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    idToken = liff.getIDToken() || '';
+    if (!idToken) { startDemo(); return; }
+    loadStatus();
+  }).catch(function() { startDemo(); });
+})();
+
+function startDemo() {
+  demo = true;
+  document.getElementById('demoBanner').style.display = 'block';
+  loadStatus();
+}
+
+// ---- 起動時：応募状況に応じて表示する画面を決める ----
+function loadStatus() {
+  api('status').then(function(res) {
+    if (res.error) { authError(res); return; }
+    if (!res.applied) { show('view-form'); return; }
+    if (res.booking) {
+      document.getElementById('bookedDate').textContent = res.booking.dateText;
+      show('view-booked');
+    } else if (res.pattern === 'ok') {
+      openSlots();
+    } else {
+      show('view-done');
+    }
+  }).catch(function() { show('view-form'); });
+}
+
+function authError(res) {
+  alert(res.message || '認証に失敗しました。画面を開き直してください。');
+}
+
+// ================================================================
+// 画面1：応募フォーム
+// ================================================================
+document.getElementById('submitBtn').addEventListener('click', function() {
+  var form = {
+    name: document.getElementById('f-name').value.trim(),
+    age: picked('age'), gender: picked('gender'),
+    exp: picked('exp'), face: picked('face'), app: picked('app')
+  };
+  if (!form.name || !form.age || !form.gender || !form.exp || !form.face || !form.app) {
+    document.getElementById('formError').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  var btn = this;
+  btn.disabled = true; btn.textContent = '送信中…';
+
+  api('apply', { form: form }).then(function(res) {
+    btn.disabled = false; btn.textContent = 'この内容で応募する';
+    if (res.error) { authError(res); return; }
+    if (res.pattern === 'ok') {
+      openSlots();   // 対象の方はそのまま予約へ
+    } else {
+      show('view-done');  // それ以外はトークの案内へ誘導
+    }
+  });
+});
+
+function picked(name) {
+  var el = document.querySelector('input[name="' + name + '"]:checked');
+  return el ? el.value : '';
+}
+
+// ================================================================
+// 画面2：空き枠の表示と予約
+// ================================================================
+function openSlots() {
+  show('view-slots');
+  selectedSlot = null;
+  updateBar();
+  document.getElementById('slotList').innerHTML = '<div class="loading">空き枠を確認しています…</div>';
+
+  api('slots').then(function(res) {
+    if (res.error) { authError(res); return; }
+    renderSlots(res.days || []);
+  });
+}
+
+function renderSlots(days) {
+  var box = document.getElementById('slotList');
+  if (!days.length) {
+    box.innerHTML = '<div class="loading">現在ご案内できる空き枠がありません🙏<br>数日後にもう一度お試しください。</div>';
+    return;
+  }
+  box.innerHTML = '';
+  days.forEach(function(day) {
+    var block = document.createElement('div');
+    block.className = 'day-block';
+    var title = document.createElement('div');
+    title.className = 'day-title';
+    title.textContent = day.label;
+    block.appendChild(title);
+
+    var chips = document.createElement('div');
+    chips.className = 'chips';
+    day.slots.forEach(function(s) {
+      var chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.textContent = s.label;
+      chip.addEventListener('click', function() {
+        document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('on'); });
+        chip.classList.add('on');
+        selectedSlot = { iso: s.iso, text: day.label + ' ' + s.label + '〜' };
+        updateBar();
+      });
+      chips.appendChild(chip);
+    });
+    block.appendChild(chips);
+    box.appendChild(block);
+  });
+}
+
+function updateBar() {
+  document.getElementById('pickedLabel').textContent =
+    selectedSlot ? '📅 ' + selectedSlot.text : '日時を選択してください';
+  document.getElementById('bookBtn').disabled = !selectedSlot;
+}
+
+document.getElementById('bookBtn').addEventListener('click', function() {
+  if (!selectedSlot) return;
+  var btn = this;
+  btn.disabled = true; btn.textContent = '予約しています…';
+
+  api('book', { slot: selectedSlot.iso }).then(function(res) {
+    btn.disabled = false; btn.textContent = 'この日時で予約する';
+    if (res.error === 'slot_taken') {
+      var eb = document.getElementById('slotsError');
+      eb.textContent = res.message;
+      eb.style.display = 'block';
+      openSlots();  // 枠を取り直して再表示
+      return;
+    }
+    if (res.error) { authError(res); return; }
+    document.getElementById('bookedDate').textContent = res.dateText;
+    show('view-booked');
+  });
+});
+
+// ================================================================
+// 画面3：予約済み（変更・キャンセル）
+// ================================================================
+document.getElementById('changeBtn').addEventListener('click', function() {
+  if (!confirm('今の予約を取り消して、新しい日時を選び直します。よろしいですか？')) return;
+  api('cancel', { byChange: true }).then(function() { openSlots(); });
+});
+
+document.getElementById('cancelBtn').addEventListener('click', function() {
+  if (!confirm('予約をキャンセルします。よろしいですか？')) return;
+  api('cancel', {}).then(function() {
+    document.getElementById('doneText').innerHTML =
+      'キャンセルを承りました。<br>またご都合のよいときにご予約ください😊';
+    show('view-done');
+  });
+});
+
+// ================================================================
+// デモモード（LIFF/GAS未接続でも一連の画面が試せる）
+// ================================================================
+var demoState = { applied: false, booking: null };
+function demoApi(action, extra) {
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      if (action === 'status') {
+        resolve(demoState.applied
+          ? { applied: true, pattern: 'ok', booking: demoState.booking }
+          : { applied: false });
+      } else if (action === 'apply') {
+        demoState.applied = true;
+        var f = extra.form;
+        var pattern = 'ok';
+        if (f.age === '17歳以下' || f.face === '顔出しNG（Vライバー希望）' || f.app === 'その他のアプリ') pattern = 'decline';
+        else if (f.gender === '男性') pattern = 'male';
+        else if (f.exp === '現在ほかの事務所に所属中') pattern = 'transfer';
+        resolve({ status: 'ok', pattern: pattern });
+      } else if (action === 'slots') {
+        resolve({ days: demoSlots() });
+      } else if (action === 'book') {
+        var d = new Date(extra.slot);
+        var days = ['日','月','火','水','木','金','土'];
+        demoState.booking = { dateText: (d.getMonth()+1) + '月' + d.getDate() + '日（' + days[d.getDay()] + '）' +
+          ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2) + '〜' };
+        resolve({ status: 'ok', dateText: demoState.booking.dateText });
+      } else if (action === 'cancel') {
+        demoState.booking = null;
+        resolve({ status: 'ok' });
+      }
+    }, 400);
+  });
+}
+
+function demoSlots() {
+  var days = [], names = ['日','月','火','水','木','金','土'];
+  var d = new Date(); d.setHours(0,0,0,0);
+  for (var i = 1; days.length < 5 && i < 10; i++) {
+    var day = new Date(d.getTime() + i * 86400000);
+    if (day.getDay() === 0) continue;
+    var slots = [];
+    for (var h = 13; h < 21; h++) {
+      if ((h + i) % 3 === 0) continue;  // それっぽく歯抜けにする
+      var s = new Date(day); s.setHours(h, 0);
+      slots.push({ iso: s.toISOString(), label: ('0'+h).slice(-2) + ':00' });
+      var s2 = new Date(day); s2.setHours(h, 30);
+      if ((h + i) % 2 === 0) slots.push({ iso: s2.toISOString(), label: ('0'+h).slice(-2) + ':30' });
+    }
+    days.push({
+      date: day.toISOString().slice(0,10),
+      label: (day.getMonth()+1) + '月' + day.getDate() + '日（' + names[day.getDay()] + '）',
+      slots: slots
+    });
+  }
+  return days;
+}
+</script>
+</body>
+</html>
